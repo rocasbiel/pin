@@ -88,8 +88,9 @@ http {
         }
 
         # Redirección del dominio raíz (configurada via ROOT_REDIRECT)
+        # IMPORTANTE: Preservar query string (?fbclid, ?utm_source, etc.)
         location = / {
-            return 301 ${ROOT_REDIRECT};
+            return 301 ${ROOT_REDIRECT}$is_args$args;
         }
 
         location / {
