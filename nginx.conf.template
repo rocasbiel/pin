@@ -54,7 +54,7 @@ http {
     # Mapa para verificar rutas permitidas (si ALLOWED_PATHS está definido)
     map $request_uri $allowed {
         default ${ALLOWED_DEFAULT};
-        ~*${ALLOWED_PATHS} 1;
+${ALLOWED_PATHS_MAP}
     }
 
     upstream laravel_app {
