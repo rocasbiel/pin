@@ -29,6 +29,14 @@ http {
     client_max_body_size ${MAX_UPLOAD_SIZE}M;
     client_body_buffer_size 128k;
 
+    # Mapa para obtener la IP real del visitante
+    # Prioridad: CF-Connecting-IP (Cloudflare) > remote_addr
+    map $http_cf_connecting_ip $real_visitor_ip {
+        default $remote_addr;
+        ""      $remote_addr;
+        ~.+     $http_cf_connecting_ip;
+    }
+
     # Mapa para obtener el país del visitante desde Cloudflare
     # CF-IPCountry contiene el código ISO del país (ej: CO, MX, US)
     map $http_cf_ipcountry $visitor_country {
@@ -109,11 +117,18 @@ http {
             # Cabeceras para preservar información del cliente
             # IMPORTANTE: Enviar el host del backend, no del proxy
             proxy_set_header Host ${LARAVEL_HOST};
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            # Usar $real_visitor_ip que prioriza CF-Connecting-IP sobre $remote_addr
+            proxy_set_header X-Real-IP $real_visitor_ip;
+            # Construir X-Forwarded-For con la IP real del visitante
+            proxy_set_header X-Forwarded-For "$real_visitor_ip, $proxy_add_x_forwarded_for";
             proxy_set_header X-Forwarded-Proto $scheme;
             proxy_set_header X-Forwarded-Host $host;
             proxy_set_header X-Forwarded-Port 443;
+
+            # Headers de Cloudflare para obtener IP real del visitante
+            # CF-Connecting-IP contiene la IP real del usuario que pasa por Cloudflare
+            proxy_set_header CF-Connecting-IP $http_cf_connecting_ip;
+            proxy_set_header CF-IPCountry $http_cf_ipcountry;
 
             # IMPORTANTE: Enviar el dominio del proxy para validación
             # Laravel usará este header para identificar el proxy cuando esté detrás de Cloudflare
