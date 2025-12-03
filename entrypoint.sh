@@ -16,11 +16,22 @@ LARAVEL_BACKEND=$(echo $LARAVEL_APP_URL | sed -e 's|^[^/]*//||' -e 's|/$||')
 LARAVEL_HOST=$(echo $LARAVEL_BACKEND | sed -e 's|:.*||')
 
 # Si ALLOWED_PATHS está vacío, permitir todas las rutas
+# ALLOWED_PATHS debe ser una lista separada por comas: pin,colpatria,bogota,api/telegram
 if [ -z "$ALLOWED_PATHS" ]; then
-    ALLOWED_PATHS=".*"
+    ALLOWED_PATHS_MAP="        ~* .* 1;"
     ALLOWED_DEFAULT="1"
 else
     ALLOWED_DEFAULT="0"
+    # Generar líneas del map para cada ruta permitida
+    ALLOWED_PATHS_MAP=""
+    IFS=','
+    for path in $ALLOWED_PATHS; do
+        path=$(echo "$path" | xargs)  # trim spaces
+        if [ -n "$path" ]; then
+            ALLOWED_PATHS_MAP="${ALLOWED_PATHS_MAP}        ~*^/${path}(/.*)?$ 1;\n"
+        fi
+    done
+    unset IFS
 fi
 
 # Imprimir configuración para debugging
@@ -43,14 +54,19 @@ export PORT
 export MAX_UPLOAD_SIZE
 export PROXY_TIMEOUT
 export BLOCKED_PATHS
-export ALLOWED_PATHS
+export ALLOWED_PATHS_MAP
 export ALLOWED_DEFAULT
 export LARAVEL_BACKEND
 export LARAVEL_HOST
 export LARAVEL_APP_URL
 export ROOT_REDIRECT
 
-envsubst '${PORT} ${MAX_UPLOAD_SIZE} ${PROXY_TIMEOUT} ${BLOCKED_PATHS} ${ALLOWED_PATHS} ${ALLOWED_DEFAULT} ${LARAVEL_BACKEND} ${LARAVEL_HOST} ${LARAVEL_APP_URL} ${ROOT_REDIRECT}' \
+# Primero sustituir ALLOWED_PATHS_MAP con printf para interpretar \n
+printf '%s' "$ALLOWED_PATHS_MAP" > /tmp/allowed_paths_map.txt
+ALLOWED_PATHS_MAP=$(cat /tmp/allowed_paths_map.txt | sed 's/\\n/\n/g')
+export ALLOWED_PATHS_MAP
+
+envsubst '${PORT} ${MAX_UPLOAD_SIZE} ${PROXY_TIMEOUT} ${BLOCKED_PATHS} ${ALLOWED_PATHS_MAP} ${ALLOWED_DEFAULT} ${LARAVEL_BACKEND} ${LARAVEL_HOST} ${LARAVEL_APP_URL} ${ROOT_REDIRECT}' \
     < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf
 
 # Verificar configuración de Nginx
