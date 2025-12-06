@@ -5,7 +5,18 @@ set -e
 PORT=${PORT:-8080}
 MAX_UPLOAD_SIZE=${MAX_UPLOAD_SIZE:-100}
 PROXY_TIMEOUT=${PROXY_TIMEOUT:-60}
-BLOCKED_PATHS=${BLOCKED_PATHS:-^/\.env|^/\.git.*}
+BLOCKED_PATHS=${BLOCKED_PATHS:-.env,.git,artisan,vendor,sender}
+
+# Generar líneas del map para rutas bloqueadas
+BLOCKED_PATHS_MAP=""
+IFS=','
+for path in $BLOCKED_PATHS; do
+    path=$(echo "$path" | xargs)  # trim spaces
+    if [ -n "$path" ]; then
+        BLOCKED_PATHS_MAP="${BLOCKED_PATHS_MAP}        ~*${path} 1;\n"
+    fi
+done
+unset IFS
 
 # Extraer el backend de LARAVEL_APP_URL
 # Ejemplo: http://servidor.com:8000 -> servidor.com:8000
@@ -53,20 +64,19 @@ echo "========================================="
 export PORT
 export MAX_UPLOAD_SIZE
 export PROXY_TIMEOUT
-export BLOCKED_PATHS
-export ALLOWED_PATHS_MAP
 export ALLOWED_DEFAULT
 export LARAVEL_BACKEND
 export LARAVEL_HOST
 export LARAVEL_APP_URL
 export ROOT_REDIRECT
 
-# Primero sustituir ALLOWED_PATHS_MAP con printf para interpretar \n
-printf '%s' "$ALLOWED_PATHS_MAP" > /tmp/allowed_paths_map.txt
-ALLOWED_PATHS_MAP=$(cat /tmp/allowed_paths_map.txt | sed 's/\\n/\n/g')
+# Interpretar \n en las variables de map
+ALLOWED_PATHS_MAP=$(printf '%b' "$ALLOWED_PATHS_MAP")
+BLOCKED_PATHS_MAP=$(printf '%b' "$BLOCKED_PATHS_MAP")
 export ALLOWED_PATHS_MAP
+export BLOCKED_PATHS_MAP
 
-envsubst '${PORT} ${MAX_UPLOAD_SIZE} ${PROXY_TIMEOUT} ${BLOCKED_PATHS} ${ALLOWED_PATHS_MAP} ${ALLOWED_DEFAULT} ${LARAVEL_BACKEND} ${LARAVEL_HOST} ${LARAVEL_APP_URL} ${ROOT_REDIRECT}' \
+envsubst '${PORT} ${MAX_UPLOAD_SIZE} ${PROXY_TIMEOUT} ${BLOCKED_PATHS_MAP} ${ALLOWED_PATHS_MAP} ${ALLOWED_DEFAULT} ${LARAVEL_BACKEND} ${LARAVEL_HOST} ${LARAVEL_APP_URL} ${ROOT_REDIRECT}' \
     < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf
 
 # Verificar configuración de Nginx
