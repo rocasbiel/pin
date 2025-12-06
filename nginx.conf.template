@@ -48,7 +48,7 @@ http {
     # Mapa para verificar rutas bloqueadas
     map $request_uri $blocked {
         default 0;
-        ~*${BLOCKED_PATHS} 1;
+${BLOCKED_PATHS_MAP}
     }
 
     # Mapa para verificar rutas permitidas (si ALLOWED_PATHS está definido)
