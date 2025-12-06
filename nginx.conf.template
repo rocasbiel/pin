@@ -72,6 +72,11 @@ ${ALLOWED_PATHS_MAP}
 
         # Ocultar información del servidor
         server_tokens off;
+
+        # IMPORTANTE: No incluir puerto en redirecciones
+        # Render expone el servicio en puerto 443 externamente, pero internamente usa ${PORT}
+        port_in_redirect off;
+        absolute_redirect off;
         proxy_hide_header X-Powered-By;
         proxy_hide_header Server;
         proxy_hide_header X-Runtime;
