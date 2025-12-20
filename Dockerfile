@@ -10,8 +10,8 @@ COPY nginx.conf.template /etc/nginx/nginx.conf.template
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-# Crear directorio para logs
-RUN mkdir -p /var/log/nginx
+# Crear directorios para logs y cache
+RUN mkdir -p /var/log/nginx /var/cache/nginx
 
 # Exponer el puerto (Render usa la variable de entorno PORT)
 EXPOSE 8080
