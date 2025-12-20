@@ -112,8 +112,9 @@ ${ALLOWED_PATHS_MAP}
             proxy_pass ${LARAVEL_APP_URL};
 
             # Reescribir redirecciones para ocultar backend
-            proxy_redirect ${LARAVEL_APP_URL} $scheme://$host;
-            proxy_redirect ~^https?://[^/]+(/.*) $scheme://$host$1;
+            # IMPORTANTE: Usar https:// explícitamente porque Render termina SSL en el edge
+            proxy_redirect ${LARAVEL_APP_URL} https://$host;
+            proxy_redirect ~^https?://[^/]+(/.*) https://$host$1;
 
             # Configuración SSL para backend HTTPS
             proxy_ssl_verify off;
@@ -127,7 +128,7 @@ ${ALLOWED_PATHS_MAP}
             proxy_set_header X-Real-IP $real_visitor_ip;
             # Construir X-Forwarded-For con la IP real del visitante
             proxy_set_header X-Forwarded-For "$real_visitor_ip, $proxy_add_x_forwarded_for";
-            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header X-Forwarded-Proto https;
             proxy_set_header X-Forwarded-Host $host;
             proxy_set_header X-Forwarded-Port 443;
 
