@@ -1,6 +1,14 @@
 #!/bin/sh
 set -e
 
+# Validar variable requerida
+if [ -z "$LARAVEL_APP_URL" ]; then
+    echo "ERROR: La variable LARAVEL_APP_URL es requerida."
+    echo "Configúrala en las variables de entorno de Render."
+    echo "Ejemplo: LARAVEL_APP_URL=https://mi-app.com"
+    exit 1
+fi
+
 # Valores por defecto
 PORT=${PORT:-8080}
 MAX_UPLOAD_SIZE=${MAX_UPLOAD_SIZE:-100}
